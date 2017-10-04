@@ -23,6 +23,8 @@ public class GetBoard {
         SB.setFields();
 
         System.out.println(SB.getIndex(row, column));
+        //Imraan was here
+        //dfsgjfkdlsg
     }
 
 }
