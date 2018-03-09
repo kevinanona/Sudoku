@@ -4,95 +4,185 @@
  * and open the template in the editor.
  */
 package sudokusudoku;
-import java.util.Random;
-
+import java.util.*;
+import java.text.*;
 /**
- *
- * @author k_ell
- */
-public class SudokuBoard{
-    private static Random random = new Random();
-    private static int randomBoard[][] = new int[9][9];
+*The SudokuGenerator class creates a random standard (9x9)
+*Sudoku board through the use of backtracking techniques.
+*/
+public class SudokuBoard
+{
+	public static final int BOARD_WIDTH = 9;
+   public static final int BOARD_HEIGHT = 9;
+	
+	/**
+	 *Constructor.  Resets board to zeros
+	 */
+   public SudokuBoard() {
+   	board = new int[BOARD_WIDTH][BOARD_HEIGHT];
+   }
+	
+	/**
+	 *Driver method for nextBoard.
+	 *@param  difficult the number of blank spaces to insert
+	 *@return board, a partially completed 9x9 Sudoku board
+	 */
+	public int[][] nextBoard(int difficulty)
+	{
+		board = new int[BOARD_WIDTH][BOARD_HEIGHT];
+		nextCell(0,0);
+		makeHoles(difficulty);
+		return board;
 
-    private static int board[][] =
+	}
+	
+	/**
+	 *Recursive method that attempts to place every number in a cell.
+	 *
+	 *@param x x value of the current cell
+	 *@param y y value of the current cell
+	 *@return  true if the board completed legally, false if this cell
+	 *has no legal solutions.
+	 */
+	public boolean nextCell(int x, int y)
+	{
+		int nextX = x;
+		int nextY = y;
+		int[] toCheck = {1,2,3,4,5,6,7,8,9};
+		Random r = new Random();
+		int tmp = 0;
+		int current = 0;
+		int top = toCheck.length;
 
-                {{2, 9, 6, 3, 1, 8, 5, 7, 4},
-                {5, 8, 4, 9, 7, 2, 6, 1, 3},
-                {7, 1, 3, 6, 4, 5, 2, 8, 9},
-                {3, 2, 5, 8, 9, 7, 3, 4, 1},
-                {9, 3, 1, 4, 2, 6, 8, 5, 7},
-                {4, 7, 8, 5, 3, 1, 9, 2, 6},
-                {1, 6, 7, 2, 5, 3, 4, 9, 8},
-                {8, 5, 9, 7, 6, 4, 1, 3, 2},
-                {3, 4, 2, 1, 8, 9, 7, 6, 5}};
-
-
-    public int getIndex(int row, int column)
-    {
-        //return board[row][column]; //board
-        return randomBoard[row][column]; //randomBoard
-    }
-
-    public static void setFields()
-    {
-        int count = 0;
-
-        for (int row = 0; row<9; row++)
+   		for(int i=top-1;i>0;i--)
+		{
+		    current = r.nextInt(i);
+		    tmp = toCheck[current];
+		    toCheck[current] = toCheck[i];
+		    toCheck[i] = tmp;
+    	}
+		
+		for(int i=0;i<toCheck.length;i++)
+		{
+			if(legalMove(x, y, toCheck[i]))
+			{
+				board[x][y] = toCheck[i];
+				if(x == 8)
+				{
+					if(y == 8)
+						return true;//We're done!  Yay!
+					else
+					{
+						nextX = 0;
+						nextY = y + 1;
+					}
+				}
+				else
+				{
+					nextX = x + 1;
+				}
+				if(nextCell(nextX, nextY))
+					return true;
+			}
+		}
+		board[x][y] = 0;
+		return false;
+	}
+	
+	/**
+	 *Given a cell's coordinates and a possible number for that cell,
+	 *determine if that number can be inserted into said cell legally.
+	 *
+	 *@param x       x value of cell
+	 *@param y       y value of cell
+	 *@param current The value to check in said cell.
+	 *@return        True if current is legal, false otherwise.
+	 */
+	private boolean legalMove(int x, int y, int current) {
+		for(int i=0;i<9;i++) {
+			if(current == board[x][i])
+				return false;
+		}
+		for(int i=0;i<9;i++) {
+			if(current == board[i][y])
+				return false;
+		}
+		int cornerX = 0;
+		int cornerY = 0;
+		if(x > 2)
+			if(x > 5)
+				cornerX = 6;
+			else
+				cornerX = 3;
+		if(y > 2)
+			if(y > 5)
+				cornerY = 6;
+			else
+				cornerY = 3;
+		for(int i=cornerX;i<10 && i<cornerX+3;i++)
+			for(int j=cornerY;j<10 && j<cornerY+3;j++)
+				if(current == board[i][j])
+					return false;
+		return true;
+	}
+	
+	/**
+	 *Given a completed board, replace a given amount of cells with 0s
+	 *(to represent blanks)
+	 *@param holesToMake How many 0s to put in the board.
+	 */
+	public void makeHoles(int holesToMake)
+	{
+		/* We define difficulty as follows:
+			Easy: 32+ clues (49 or fewer holes)
+			Medium: 27-31 clues (50-54 holes)
+			Hard: 26 or fewer clues (54+ holes)
+			This is human difficulty, not algorighmically (though there is some correlation)
+		*/
+		double remainingSquares = 81;
+		double remainingHoles = (double)holesToMake;
+		
+		for(int i=0;i<9;i++)
+			for(int j=0;j<9;j++)
+			{
+				double holeChance = remainingHoles/remainingSquares;
+				if(Math.random() <= holeChance)
+				{
+					board[i][j] = 0;
+					remainingHoles--;
+				}
+				remainingSquares--;
+			}
+	}
+	
+	/**
+	 *Prints a representation of board on stdout
+	 */
+	private void print()
+	{
+		for(int i=0;i<9;i++)
+		{
+			for(int j=0;j<9;j++)
+				System.out.print(board[i][j] + "  ");
+			System.out.println();
+		}
+		System.out.println();
+	}
+        
+        public int getIndex(int row, int column)
         {
-            for (int column = 0; column<9; column++)
-            {
-                int attempts = 0;
-                count++;
-                int ranNum = random.nextInt(9)+ 1;
-
-                //for(int i = 0; i<9; i++)
-                //{
-                while
-                 (ranNum == randomBoard[row][0] || ranNum == randomBoard[row][1] || ranNum == randomBoard[row][2] ||
-                  ranNum == randomBoard[row][3] || ranNum == randomBoard[row][4] || ranNum == randomBoard[row][5] ||
-                  ranNum == randomBoard[row][6] || ranNum == randomBoard[row][7] || ranNum == randomBoard[row][8] ||
-                  ranNum == randomBoard[0][column] || ranNum == randomBoard[1][column] || ranNum == randomBoard[2][column] ||
-                  ranNum == randomBoard[3][column] || ranNum == randomBoard[4][column] || ranNum == randomBoard[5][column] ||
-                  ranNum == randomBoard[6][column] || ranNum == randomBoard[7][column] || ranNum == randomBoard[8][column])
-                {
-                    if(ranNum<9)
-                    {
-                        ranNum++;
-                        attempts++;
-                    }
-                    else
-                    {
-                        ranNum = 1;
-                        attempts++;
-                    }
-                    System.out.println("r" + ranNum);
-
-                }
-                //}
-                randomBoard[row][column] = ranNum;
-                System.out.println("c" + count + " has " + ranNum);
-
-            }
+            return board[row][column];
         }
-        //return randomBoard;
-    }
-
-    private static void displayRandom()
-    {
-        setFields();
-
-        for (int row = 0; row<9; row++)
-        {
-            for (int column = 0; column<9; column++)
-            {
-                System.out.print(randomBoard[row][column]);
-                System.out.print(", ");
-            }
-            System.out.println("");
-        }
-    }
-    public static void main( String[] args )
-    {
-        displayRandom();
-    }
+        
+	
+	public static void main(String[] args)
+	{
+		SudokuBoard sb = new SudokuBoard();
+		sb.nextBoard(0);   //number of holes
+		sb.print();
+                //System.out.println(sb.getIndex(0,0)); //was testing
+	}
+	
+	int[][] board;
+	private int operations;
 }
